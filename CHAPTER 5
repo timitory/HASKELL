@@ -1,0 +1,38 @@
+applyThrice :: (Int -> Int) -> Int -> Int
+applyThrice f x = f (f (f x))
+
+
+oddNumbers :: [Int]
+oddNumbers = filter odd [1..30]
+
+
+import Data.Char (isUpper)
+
+hasUppercaseWord :: [String] -> Bool
+hasUppercaseWord = any (\w -> not (null w) && isUpper (head w))
+
+biggerThan10 :: Int -> Bool
+biggerThan10 = \x -> x > 10
+
+multiplyByFive :: Int -> Int
+multiplyByFive = (*) 5
+
+
+squaresOfEvens :: [Int] -> [Int]
+squaresOfEvens = filter even . map (^2)
+
+
+result :: Int
+result = sum $ map (*2) $ filter (>3) [1..10]
+
+
+addFive :: Int -> Int
+addFive = (+ 5)
+
+
+transformList :: (a -> a) -> [a] -> [a]
+transformList f = map (f . f)
+
+
+anySquareGreaterThan50 :: [Int] -> Bool
+anySquareGreaterThan50 = any (>50) . map (^2)
