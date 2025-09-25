@@ -1,0 +1,100 @@
+weatherReport :: String -> String
+weatherReport "sunny"  = "It's a bright and beautiful day!"
+weatherReport "rainy"  = "Don't forget your umbrella!"
+weatherReport "cloudy" = "A bit gloomy, but no rain yet!"
+weatherReport _        = "Weather unknown"
+
+-- Tests
+-- weatherReport "sunny"   => "It's a bright and beautiful day!"
+-- weatherReport "stormy"  => "Weather unknown"
+
+dayType :: String -> String
+dayType "Saturday" = "It's a weekend!"
+dayType "Sunday"   = "It's a weekend!"
+dayType "Monday"   = "It's a weekday."
+dayType "Tuesday"  = "It's a weekday."
+dayType "Wednesday"= "It's a weekday."
+dayType "Thursday" = "It's a weekday."
+dayType "Friday"   = "It's a weekday."
+dayType _          = "Invalid day"
+
+-- Tests
+-- dayType "Saturday" => "It's a weekend!"
+-- dayType "Tuesday"  => "It's a weekday."
+-- dayType "Funday"   => "Invalid day"
+
+
+
+gradeComment :: Int -> String
+gradeComment n
+  | n >= 90 && n <= 100 = "Excellent!"
+  | n >= 70 && n <= 89  = "Good job!"
+  | n >= 50 && n <= 69  = "You passed."
+  | n >= 0  && n <= 49  = "Better luck next time."
+  | otherwise           = "Invalid grade"
+
+-- Tests
+-- gradeComment 95 => "Excellent!"
+-- gradeComment 72 => "Good job!"
+-- gradeComment 40 => "Better luck next time."
+
+
+
+
+specialBirthday :: Int -> String
+specialBirthday 1  = "First birthday – special!"
+specialBirthday 18 = "Turning 18 – adulthood!"
+specialBirthday 50 = "Big 50 – golden age!"
+specialBirthday _  = "Not a special birthday"
+
+-- Tests
+-- specialBirthday 1  => "First birthday – special!"
+-- specialBirthday 20 => "Not a special birthday"
+
+
+
+specialBirthday' :: Int -> String
+specialBirthday' 1  = "First birthday – special!"
+specialBirthday' 18 = "Turning 18 – adulthood!"
+specialBirthday' 50 = "Big 50 – golden age!"
+specialBirthday' age = "You are " ++ show age ++ " years old."
+
+-- Tests
+-- specialBirthday' 30 => "You are 30 years old."
+
+
+
+
+whatsInsideThisList :: [a] -> String
+whatsInsideThisList []      = "The list is empty."
+whatsInsideThisList [x]     = "The list has one element."
+whatsInsideThisList [x,y]   = "The list has two elements."
+whatsInsideThisList (x:y:_) = "The list has many elements."
+
+-- Tests
+-- whatsInsideThisList []        => "The list is empty."
+-- whatsInsideThisList [1]       => "The list has one element."
+-- whatsInsideThisList [1,2,3]   => "The list has many elements."
+
+
+
+firstAndThird :: [a] -> (Maybe a, Maybe a)
+firstAndThird (x:_:z:_) = (Just x, Just z)
+firstAndThird (x:_:[])  = (Just x, Nothing)
+firstAndThird [x]       = (Just x, Nothing)
+firstAndThird []        = (Nothing, Nothing)
+
+-- Tests
+-- firstAndThird [10,20,30,40] => (Just 10, Just 30)
+-- firstAndThird [5]           => (Just 5, Nothing)
+-- firstAndThird []            => (Nothing, Nothing)
+
+
+
+
+describeTuple :: (String, Int, Bool) -> String
+describeTuple (name, age, isStudent) =
+  name ++ " is " ++ show age ++ " years old and student status is " ++ show isStudent
+
+-- Tests
+-- describeTuple ("Alice", 20, True) => "Alice is 20 years old and student status is True"
