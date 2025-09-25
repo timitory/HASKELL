@@ -1,0 +1,58 @@
+-- Doubles a number
+double :: Int -> Int
+double x = x * 2
+
+-- Increments a number by 1
+increment :: Int -> Int
+increment x = x + 1
+
+-- Compose functions: double first, then increment
+doubleThenIncrement :: Int -> Int
+doubleThenIncrement = increment . double
+
+-- Calculates the area of a circle (pure function)
+circleArea :: Floating a => a -> a
+circleArea r = pi * r * r
+
+greaterThan18 :: Int -> Bool
+greaterThan18 x = x > 18
+
+import Data.List (sortBy)
+import Data.Ord (comparing)
+
+-- Extract player names from a list of (name, score)
+extractPlayers :: [(String, Int)] -> [String]
+extractPlayers players = [name | (name, _) <- players]
+
+-- Sort players by score (descending)
+sortByScore :: [(String, Int)] -> [(String, Int)]
+sortByScore = sortBy (flip (comparing snd))
+
+-- Get top 3 players
+topThree :: [(String, Int)] -> [(String, Int)]
+topThree players = take 3 players
+
+-- Compose them into one function
+getTopThreePlayers :: [(String, Int)] -> [String]
+getTopThreePlayers = extractPlayers . topThree . sortByScore
+
+
+  -- Infinite list of numbers starting from 1
+infiniteNumbers :: [Int]
+infiniteNumbers = [1..]
+
+-- Take first n elements
+firstN :: Int -> [Int]
+firstN n = take n infiniteNumbers
+
+addNumbers :: Int -> Int -> Int
+addNumbers x y = x + y
+
+  fToC :: Floating a => a -> a
+fToC f = (f - 32) * 5 / 9
+
+applyTwice :: (a -> a) -> a -> a
+applyTwice f x = f (f x)
+
+  
+
