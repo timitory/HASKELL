@@ -1,0 +1,69 @@
+Expressions and their expected types:
+
+42 → Int (but in GHCi it shows as Num a => a since it’s polymorphic numeric literal).
+
+3.14 → Fractional a => a (commonly Double).
+
+"Haskell" → String (which is [Char]).
+
+'Z' → Char.
+
+True && False → Bool.
+
+-- Adds two Int values
+add :: Int -> Int -> Int
+add x y = x + y
+
+-- Checks if number is even
+isEven :: Int -> Bool
+isEven n = n `mod` 2 == 0
+
+-- Concatenates two strings
+concatStrings :: String -> String -> String
+concatStrings s1 s2 = s1 ++ s2
+
+myAge :: Int
+myAge = 21
+
+piValue :: Double
+piValue = 3.14159
+
+greeting :: String
+greeting = "Hello, Haskell!"
+
+isHaskellFun :: Bool
+isHaskellFun = True
+
+5 + 3        -- (+) 5 3
+10 * 4       -- (*) 10 4
+True && False -- (&&) True False
+
+(+) 7 2      -- 7 + 2
+(*) 6 5      -- 6 * 5
+(&&) True False -- True && False
+
+-- Circle area
+circleArea :: Float -> Float
+circleArea r = pi * r * r
+
+-- Maximum of three numbers
+maxOfThree :: Int -> Int -> Int -> Int
+maxOfThree a b c = max a (max b c)
+
+smallNumber :: Int
+smallNumber = 262
+
+bigNumber :: Integer
+bigNumber = 2127
+
+-- True using &&
+expr1 = (5 > 3) && (2 < 4)   -- True
+
+-- False using ||
+expr2 = (5 < 3) || (2 > 10)  -- False
+
+-- True using not
+expr3 = not False            -- True
+
+-- Comparison returning False
+expr4 = (10 == 20)           -- False
