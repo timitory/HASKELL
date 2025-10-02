@@ -1,0 +1,83 @@
+-- HC9T1: Define a Parametric Type Synonym
+type Entity a = (Address, a)
+-- Example: Entity String could be ( "0x123", "UserName" )
+
+
+-- HC9T2: Implement a Parametric Data Type
+data Box a = Empty | Has a
+  deriving Show
+
+
+-- HC9T3: Function to Add Values in a Box
+addN :: Num a => a -> Box a -> Box a
+addN _ Empty     = Empty
+addN n (Has x)   = Has (x + n)
+
+-- Example: addN 5 (Has 10) => Has 15
+--          addN 5 Empty    => Empty
+
+
+-- HC9T4: Extract a Value from a Box
+extract :: a -> Box a -> a
+extract def Empty   = def
+extract _   (Has x) = x
+
+-- Example: extract 0 (Has 7) => 7
+--          extract 0 Empty   => 0
+
+
+-- HC9T5: Parametric Data Type with Record Syntax
+data Shape a
+  = Circle { radius :: Float, color :: a }
+  | Rectangle { width :: Float, height :: Float, color :: a }
+  deriving Show
+
+-- Example: Circle { radius = 5, color = "Red" }
+--          Rectangle { width = 4, height = 6, color = "Blue" }
+
+
+-- HC9T6: Recursive Data Type for Tweets
+data Tweet = Tweet
+  { content :: String
+  , likes   :: Int
+  , comments :: [Tweet]
+  } deriving Show
+
+-- Example:
+-- tweet1 = Tweet "Hello world" 10 []
+-- tweet2 = Tweet "Reply" 5 [tweet1]
+
+
+-- HC9T7: Engagement Function for Tweets
+engagement :: Tweet -> Int
+engagement (Tweet _ likes comments) =
+    likes + sum (map engagement comments)
+
+-- Example:
+-- engagement tweet1 => 10
+-- engagement tweet2 => 15
+
+
+-- HC9T8: Recursive Sequence Data Type
+data Sequence a = Nil | Node a (Sequence a)
+  deriving Show
+
+-- Example: Node 1 (Node 2 (Node 3 Nil))
+
+
+-- HC9T9: Check for Element in a Sequence
+elemSeq :: Eq a => a -> Sequence a -> Bool
+elemSeq _ Nil          = False
+elemSeq y (Node x xs)  = (y == x) || elemSeq y xs
+
+-- Example: elemSeq 2 (Node 1 (Node 2 Nil)) => True
+--          elemSeq 5 (Node 1 (Node 2 Nil)) => False
+
+
+-- HC9T10: Binary Search Tree Data Type
+data BST a = EmptyBST
+           | NodeBST a (BST a) (BST a)
+  deriving Show
+
+-- Example:
+-- let tree = NodeBST 10 (NodeBST 5 EmptyBST EmptyBST) (NodeBST 15 EmptyBST EmptyBST)
