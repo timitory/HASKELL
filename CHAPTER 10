@@ -1,0 +1,147 @@
+
+
+module Ch10_11Tasks where
+
+import Data.List (sort)
+
+-- =========================
+-- HC10T1: ShowSimple Type Class
+-- =========================
+class ShowSimple a where
+  showSimple :: a -> String
+
+data PaymentMethod = Cash | Card | Crypto
+  deriving (Eq, Ord, Show)
+
+instance ShowSimple PaymentMethod where
+  showSimple Cash   = "cash"
+  showSimple Card   = "card"
+  showSimple Crypto = "crypto"
+
+-- Example: showSimple Cash == "cash"
+
+
+-- =========================
+-- HC10T2: Summable Type Class
+-- =========================
+class Summable a where
+  sumUp :: [a] -> a
+
+instance Summable Int where
+  sumUp = foldr (+) 0
+
+-- Example: sumUp [1,2,3] == 6
+
+
+-- =========================
+-- HC10T3: Comparable Type Class
+-- =========================
+class Comparable a where
+  compareWith :: a -> a -> Ordering
+
+-- a simple Blockchain type
+newtype Blockchain = Blockchain [Int]  -- list of block ids (toy)
+  deriving (Show)
+
+instance Comparable Blockchain where
+  -- compare by length (number of blocks), then lexicographically
+  compareWith (Blockchain xs) (Blockchain ys) =
+    case compare (length xs) (length ys) of
+      EQ -> compare xs ys
+      other -> other
+
+-- Example: compareWith (Blockchain [1,2]) (Blockchain [3]) == GT
+
+
+-- =========================
+-- HC10T4: Eq Instance for Box
+-- =========================
+newtype Box a = Box (Maybe a)
+  deriving (Show, Functor, Foldable, Traversable)
+
+instance (Eq a) => Eq (Box a) where
+  Box Nothing == Box Nothing = True
+  Box (Just x) == Box (Just y) = x == y
+  _ == _ = False
+
+-- Example: Box (Just 3) == Box (Just 3) -> True
+
+
+-- =========================
+-- HC10T5: ShowDetailed Type Class
+-- =========================
+data User = User
+  { userId :: Int
+  , userName :: String
+  , userEmail :: String
+  } deriving (Show, Eq)
+
+class ShowDetailed a where
+  showDetailed :: a -> String
+
+instance ShowDetailed User where
+  showDetailed (User i n e) =
+    "User: " ++ n ++ " (id: " ++ show i ++ ", email: " ++ e ++ ")"
+
+-- Example: showDetailed (User 1 "Paul" "p@example.com")
+
+
+-- =========================
+-- HC10T6: Mutual Recursion in Eq for Blockchain
+-- =========================
+-- We'll implement Eq for Blockchain where (==) and (/=) are related.
+instance Eq Blockchain where
+  (Blockchain xs) == (Blockchain ys) = length xs == length ys && xs == ys
+  x /= y = not (x == y)
+-- Here (==) is defined; (/=) uses mutual recursion (calls ==) as requested.
+-- (This is the usual pattern in Haskell though `(/=)` normally has default).
+
+-- =========================
+-- HC10T7: Convertible Type Class
+-- =========================
+class Convertible a b where
+  convert :: a -> b
+
+instance Convertible PaymentMethod String where
+  convert = showSimple
+
+-- Example: convert Card :: String -> "card"
+
+
+-- =========================
+-- HC10T8: AdvancedEq Subclass of Eq
+-- =========================
+class Eq a => AdvancedEq a where
+  compareEquality :: a -> a -> Bool
+  compareEquality x y = x == y  -- default delegating to Eq
+
+-- Provide an instance for Blockchain
+instance AdvancedEq Blockchain where
+  -- for demonstration, compareEquality checks block-by-block equality
+  compareEquality (Blockchain xs) (Blockchain ys) = xs == ys
+
+
+-- =========================
+-- HC10T9: MinMax Type Class
+-- =========================
+class MinMax a where
+  minValue :: a
+  maxValue :: a
+
+instance MinMax Int where
+  minValue = minBound
+  maxValue = maxBound
+
+-- Example: minValue :: Int == minBound
+
+
+-- =========================
+-- HC10T10: Concatenatable Type Class
+-- =========================
+class Concatenatable a where
+  concatWith :: a -> a -> a
+
+instance Concatenatable [Char] where
+  concatWith = (++)
+
+-- Example: concatWith "Hello, " "World!" -> "Hello, World!"
