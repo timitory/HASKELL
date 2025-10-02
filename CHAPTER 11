@@ -1,0 +1,151 @@
+-- =========================
+-- HC11T1: WeAccept Instance for Box
+-- =========================
+-- Define WeAccept type class
+class WeAccept a where
+  weAccept :: a -> Bool
+  fancyFunction :: a -> String
+  fancyFunction x = if weAccept x then "Accepted" else "Rejected"
+
+-- For Box PaymentMethod acceptance: accept Card and Cash only
+instance WeAccept (Box PaymentMethod) where
+  weAccept (Box Nothing) = False
+  weAccept (Box (Just Cash)) = True
+  weAccept (Box (Just Card)) = True
+  weAccept (Box (Just Crypto)) = False
+
+-- returns list of accepted boxes from a list
+acceptedBoxes :: [Box PaymentMethod] -> [Box PaymentMethod]
+acceptedBoxes = filter weAccept
+
+
+-- =========================
+-- HC11T2: Fancy Function for WeAccept
+-- =========================
+-- define some toy types Cardano, Cash, Country
+data Cardano = Cardano deriving (Show)
+data CashT = CashT deriving (Show)
+data Country = Country String deriving (Show)
+
+-- Instances of WeAccept for these types
+instance WeAccept Cardano where
+  weAccept _ = False
+  fancyFunction _ = "Cardano not accepted here"
+
+instance WeAccept CashT where
+  weAccept _ = True
+  fancyFunction _ = "Cash accepted happily"
+
+instance WeAccept Country where
+  weAccept (Country c) = not (null c)
+  fancyFunction (Country c) = "Country: " ++ c ++ if weAccept (Country c) then " accepted" else " rejected"
+
+-- Example usage:
+-- fancyFunction CashT -> "Cash accepted happily"
+-- fancyFunction (Country "NG") -> "Country: NG accepted"
+
+
+-- =========================
+-- HC11T3: Container Type Class for Box
+-- =========================
+class Container c where
+  isEmpty :: (Eq a) => c a -> Bool
+  contains :: (Eq a) => c a -> a -> Bool
+  replace :: (Eq a) => c a -> a -> c a
+
+-- Implement for Box
+instance Container Box where
+  isEmpty (Box Nothing) = True
+  isEmpty _ = False
+
+  contains (Box Nothing) _ = False
+  contains (Box (Just x)) y = x == y
+
+  replace (Box _) new = Box (Just new)
+
+-- =========================
+-- HC11T4: Container Instance for Present
+-- =========================
+data Present a = Present a | EmptyPresent
+  deriving (Show, Eq, Functor, Foldable, Traversable)
+
+instance Container Present where
+  isEmpty EmptyPresent = True
+  isEmpty _ = False
+
+  contains EmptyPresent _ = False
+  contains (Present x) y = x == y
+
+  replace _ new = Present new
+
+
+-- =========================
+-- HC11T5: guessWhat'sInside Function for Containers
+-- =========================
+-- Generic function using Container typeclass. Needs Eq on contents.
+guessWhatsInside :: (Container c, Eq a) => c a -> a -> Bool
+guessWhatsInside = contains
+
+-- Example: guessWhatsInside (Box (Just 3)) 3 -> True
+
+
+-- =========================
+-- HC11T6: AdvancedEq for Blockchain
+-- (already defined earlier; re-affirming)
+-- =========================
+-- (We already defined AdvancedEq and an instance for Blockchain above)
+
+
+-- =========================
+-- HC11T7: Ord Instance for Box
+-- =========================
+-- We'll implement Ord based on presence and underlying Ord of a
+instance (Ord a) => Ord (Box a) where
+  compare (Box Nothing) (Box Nothing) = EQ
+  compare (Box Nothing) (Box (Just _)) = LT
+  compare (Box (Just _)) (Box Nothing) = GT
+  compare (Box (Just x)) (Box (Just y)) = compare x y
+
+-- This allows sorting of [Box Int], etc.
+
+
+-- =========================
+-- HC11T8: Deriving Eq and Ord for PaymentMethod
+-- =========================
+-- Already derived at its definition: `deriving (Eq, Ord, Show)`
+-- So: Cash < Card < Crypto if we rely on derived Ord order
+-- Example: Cash < Crypto == True
+
+
+-- =========================
+-- HC11T9: Data Type Length with Units
+-- =========================
+data Length = M Int | Km Int
+  deriving (Show)
+
+instance Eq Length where
+  (M a) == (M b)   = a == b
+  (Km a) == (Km b) = a == b
+  (M a) == (Km b)  = a == (b * 1000)
+  (Km a) == (M b)  = (a * 1000) == b
+
+-- We could also implement Ord similarly so comparisons work across units:
+instance Ord Length where
+  compare (M a) (M b) = compare a b
+  compare (Km a) (Km b) = compare a b
+  compare (M a) (Km b) = compare a (b * 1000)
+  compare (Km a) (M b) = compare (a * 1000) b
+
+-- Example: M 1000 == Km 1 -> True
+
+
+-- =========================
+-- HC11T10: sortContainers Function
+-- =========================
+-- Sorts a list of containers that have Ord: we implemented Ord for Box
+sortContainers :: (Ord (c a)) => [c a] -> [c a]
+sortContainers = sort
+
+-- Example with Box Int:
+-- sortContainers [Box (Just 5), Box Nothing, Box (Just 2)]
+-- => [Box Nothing, Box (Just 2), Box (Just 5)]
