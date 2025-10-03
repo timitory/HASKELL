@@ -1,0 +1,81 @@
+
+-- HC7T1 + HC7T2: Eq and Ord instances for Color
+data Color = Red | Green | Blue
+    deriving (Show, Enum, Bounded)
+
+instance Eq Color where
+    Red   == Red   = True
+    Green == Green = True
+    Blue  == Blue  = True
+    _     == _     = False
+
+instance Ord Color where
+    compare Red Red     = EQ
+    compare Red _       = LT
+    compare Green Red   = GT
+    compare Green Green = EQ
+    compare Green Blue  = LT
+    compare Blue Blue   = EQ
+    compare Blue _      = GT
+
+-- HC7T3: Function with Eq + Ord constraints
+compareValues :: (Eq a, Ord a) => a -> a -> a
+compareValues x y
+    | x >= y    = x
+    | otherwise = y
+
+-- HC7T4: Shape with Show and Read
+data Shape = Circle Double | Rectangle Double Double
+
+instance Show Shape where
+    show (Circle r) = "Circle with radius " ++ show r
+    show (Rectangle w h) = "Rectangle with width " ++ show w ++ " and height " ++ show h
+
+instance Read Shape where
+    readsPrec _ value =
+        case words value of
+            ["Circle", r] ->
+                [(Circle (read r), "")]
+            ["Rectangle", w, h] ->
+                [(Rectangle (read w) (read h), "")]
+            _ -> []
+
+-- HC7T5: Function with Num constraint
+squareArea :: Num a => a -> a
+squareArea side = side * side
+
+-- HC7T6: Using Integral and Floating
+circleCircumference :: (Floating a, Integral b) => b -> a
+circleCircumference r = 2 * pi * fromIntegral r
+
+-- HC7T7: Bounded and Enum
+nextColor :: Color -> Color
+nextColor c
+    | c == maxBound = minBound
+    | otherwise     = succ c
+
+-- HC7T8: Parse Shape from String
+parseShape :: String -> Maybe Shape
+parseShape s =
+    case reads s of
+        [(shape, "")] -> Just shape
+        _             -> Nothing
+
+-- HC7T9: Describable type class
+class Describable a where
+    describe :: a -> String
+
+instance Describable Bool where
+    describe True  = "This is True"
+    describe False = "This is False"
+
+instance Describable Shape where
+    describe (Circle r) = "A circle of radius " ++ show r
+    describe (Rectangle w h) = "A rectangle of width " ++ show w ++ " and height " ++ show h
+
+-- HC7T10: Function with multiple type class constraints
+describeAndCompare :: (Describable a, Ord a) => a -> a -> String
+describeAndCompare x y
+    | x >= y    = describe x
+    | otherwise = describe y
+
