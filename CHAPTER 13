@@ -1,0 +1,184 @@
+## **HC13T1: List Files in Directory**
+
+```haskell
+-- HC13T1.hs
+import System.Directory (listDirectory)
+
+main :: IO ()
+main = do
+    files <- listDirectory "."
+    putStrLn "Files in current directory:"
+    mapM_ putStrLn files
+```
+
+---
+
+## **HC13T2: Filter Files by Substring**
+
+```haskell
+-- HC13T2.hs
+import System.Directory (listDirectory)
+import Data.List (isInfixOf)
+
+filterFiles :: String -> IO [FilePath]
+filterFiles substr = do
+    files <- listDirectory "."
+    return (filter (isInfixOf substr) files)
+
+main :: IO ()
+main = do
+    putStrLn "Enter substring to filter:"
+    substr <- getLine
+    results <- filterFiles substr
+    putStrLn "Filtered files:"
+    mapM_ putStrLn results
+```
+
+---
+
+## **HC13T3: Sort and Return Filtered Files**
+
+```haskell
+-- HC13T3.hs
+import System.Directory (listDirectory)
+import Data.List (isInfixOf, sort)
+
+sortFilteredFiles :: String -> IO [FilePath]
+sortFilteredFiles substr = do
+    files <- listDirectory "."
+    return (sort (filter (isInfixOf substr) files))
+
+main :: IO ()
+main = do
+    putStrLn "Enter substring to filter and sort:"
+    substr <- getLine
+    results <- sortFilteredFiles substr
+    putStrLn "Sorted filtered files:"
+    mapM_ putStrLn results
+```
+
+---
+
+## **HC13T4: SumNonEmpty Module**
+
+```haskell
+-- SumNonEmpty.hs
+module SumNonEmpty where
+
+sumNonEmpty :: [Int] -> Int
+sumNonEmpty [] = error "List cannot be empty!"
+sumNonEmpty xs = sum xs
+```
+
+---
+
+## **HC13T5: Restrict Module Export List**
+
+```haskell
+-- SumNonEmpty.hs
+module SumNonEmpty (sumNonEmpty) where
+
+sumNonEmpty :: [Int] -> Int
+sumNonEmpty [] = error emptyListError
+sumNonEmpty xs = sum xs
+
+-- helper (not exported)
+emptyListError :: String
+emptyListError = "List cannot be empty!"
+```
+
+---
+
+## **HC13T6: File Names to Map**
+
+```haskell
+-- HC13T6.hs
+import System.Directory (listDirectory)
+import Data.List (isInfixOf)
+import qualified Data.Map as Map
+
+filesToMap :: String -> IO (Map.Map Int FilePath)
+filesToMap substr = do
+    files <- listDirectory "."
+    let filtered = filter (isInfixOf substr) files
+    return (Map.fromList (zip [1..] filtered))
+
+main :: IO ()
+main = do
+    putStrLn "Enter substring for map conversion:"
+    substr <- getLine
+    fileMap <- filesToMap substr
+    print fileMap
+```
+
+---
+
+## **HC13T7: Use Custom Module in Main**
+
+```haskell
+-- Main.hs
+import SumNonEmpty (sumNonEmpty)
+
+main :: IO ()
+main = do
+    let nums = [10, 20, 30]
+    putStrLn ("Sum of numbers: " ++ show (sumNonEmpty nums))
+```
+
+---
+
+## **HC13T8: Qualified Imports for Name Conflicts**
+
+```haskell
+-- HC13T8.hs
+import qualified Data.List as L
+import qualified Data.Map as M
+
+main :: IO ()
+main = do
+    let list1 = [3,1,2]
+    let sorted = L.sort list1
+    let m = M.fromList [(1, "A"), (2, "B")]
+    putStrLn ("Sorted list: " ++ show sorted)
+    putStrLn ("Lookup 2: " ++ show (M.lookup 2 m))
+```
+
+---
+
+## **HC13T9: Renaming Module Namespace**
+
+```haskell
+-- HC13T9.hs
+import qualified Data.List as DL
+import qualified Data.Map as DM
+
+main :: IO ()
+main = do
+    let items = ["apple", "banana", "cherry"]
+    let sorted = DL.sort items
+    let m = DM.fromList (zip [1..] items)
+    putStrLn ("Sorted items: " ++ show sorted)
+    putStrLn ("Map contents: " ++ show m)
+```
+
+---
+
+## **HC13T10: Multi-Module Main Function**
+
+```haskell
+-- HC13T10.hs
+import System.Directory (listDirectory)
+import Data.List (isInfixOf, sort)
+
+searchAndSort :: String -> IO [FilePath]
+searchAndSort substr = do
+    files <- listDirectory "."
+    return (sort (filter (isInfixOf substr) files))
+
+main :: IO ()
+main = do
+    putStrLn "Enter substring to search files:"
+    substr <- getLine
+    results <- searchAndSort substr
+    putStrLn "Search results (sorted):"
+    mapM_ putStrLn results
