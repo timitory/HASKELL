@@ -1,0 +1,73 @@
+----------------------------------------
+-- HC16T1: Reverse a String
+----------------------------------------
+reverseString :: String -> String
+reverseString = reverse
+
+----------------------------------------
+-- HC16T2: Palindrome Checker
+----------------------------------------
+isPalindrome :: String -> Bool
+isPalindrome s = s == reverse s
+
+----------------------------------------
+-- HC16T3: Factorial
+----------------------------------------
+factorial :: Integer -> Integer
+factorial 0 = 1
+factorial n = n * factorial (n - 1)
+
+----------------------------------------
+-- HC16T4: Filter Even Numbers
+----------------------------------------
+filterEvens :: [Int] -> [Int]
+filterEvens = filter even
+
+----------------------------------------
+-- HC16T5: Uppercase String
+----------------------------------------
+import Data.Char (toUpper)
+
+toUpperCase :: String -> String
+toUpperCase = map toUpper
+
+----------------------------------------
+-- HC16T6: nth Fibonacci Number
+----------------------------------------
+fibonacci :: Int -> Int
+fibonacci 0 = 0
+fibonacci 1 = 1
+fibonacci n = fibonacci (n - 1) + fibonacci (n - 2)
+
+----------------------------------------
+-- HC16T7: Element Existence in List
+----------------------------------------
+existsInList :: Eq a => a -> [a] -> Bool
+existsInList = elem
+
+----------------------------------------
+-- HC16T8: Insertion Sort
+----------------------------------------
+insertionSort :: [Int] -> [Int]
+insertionSort [] = []
+insertionSort (x:xs) = insert x (insertionSort xs)
+  where
+    insert y [] = [y]
+    insert y (z:zs)
+      | y <= z    = y : z : zs
+      | otherwise = z : insert y zs
+
+----------------------------------------
+-- HC16T9: Remove Duplicates from List
+----------------------------------------
+removeDuplicates :: Eq a => [a] -> [a]
+removeDuplicates [] = []
+removeDuplicates (x:xs) = x : removeDuplicates (filter (/= x) xs)
+
+----------------------------------------
+-- HC16T10: Character Frequency in String
+----------------------------------------
+import Data.List (group, sort)
+
+charFrequency :: String -> [(Char, Int)]
+charFrequency s = [(c, length g) | g@(c:_) <- group (sort s)]
