@@ -1,0 +1,103 @@
+-- File: Chapter12.hs
+
+module Main where
+import System.IO
+import System.IO.Error (catchIOError)
+import Data.List (sort)
+
+-- HC12T2: Add Two Numbers
+addTwoNumbers :: Int -> Int -> Int
+addTwoNumbers x y = x + y
+
+-- HC12T3: Factorial Function
+factorial :: Int -> Int
+factorial 0 = 1
+factorial n = n * factorial (n - 1)
+
+-- HC12T4: First 10 Fibonacci Numbers
+fibonacci :: Int -> Int
+fibonacci 0 = 0
+fibonacci 1 = 1
+fibonacci n = fibonacci (n - 1) + fibonacci (n - 2)
+
+first10Fibonacci :: [Int]
+first10Fibonacci = map fibonacci [0..9]
+
+-- HC12T5: Palindrome Checker
+isPalindrome :: String -> Bool
+isPalindrome str = str == reverse str
+
+-- HC12T6: Sort a List of Integers
+sortList :: [Int] -> [Int]
+sortList = sort
+
+-- HC12T7: Calculate Circle Area
+calculateCircleArea :: Float -> Float
+calculateCircleArea r = pi * r * r
+
+-- HC12T8: Merge Two Sorted Lists
+mergeLists :: Ord a => [a] -> [a] -> [a]
+mergeLists [] ys = ys
+mergeLists xs [] = xs
+mergeLists (x:xs) (y:ys)
+  | x < y     = x : mergeLists xs (y:ys)
+  | otherwise = y : mergeLists (x:xs) ys
+
+-- HC12T9: Read and Print File Content
+readFileSafe :: FilePath -> IO ()
+readFileSafe filename = catchIOError (readFile filename >>= putStrLn)
+                                      (\_ -> putStrLn "Error: File does not exist.")
+
+-- HC12T10: Mathematical Operations Module (defined inline here for simplicity)
+module MathOps where
+    add :: Int -> Int -> Int
+    add a b = a + b
+
+    multiply :: Int -> Int -> Int
+    multiply a b = a * b
+
+-- Back to Main module
+import qualified MathOps
+
+main :: IO ()
+main = do
+    -- HC12T1: Print a Welcome Message
+    putStrLn "Welcome to Haskell Programming!"
+
+    -- HC12T2: Add Two Numbers
+    putStrLn $ "Sum of 5 and 7 is: " ++ show (addTwoNumbers 5 7)
+
+    -- HC12T3: Factorial
+    putStrLn $ "Factorial of 5 is: " ++ show (factorial 5)
+
+    -- HC12T4: Fibonacci
+    putStrLn "First 10 Fibonacci numbers:"
+    print first10Fibonacci
+
+    -- HC12T5: Palindrome Checker
+    putStrLn "Enter a word to check if it's a palindrome:"
+    word <- getLine
+    putStrLn $ if isPalindrome word then "It is a palindrome." else "Not a palindrome."
+
+    -- HC12T6: Sort List
+    putStrLn "Enter numbers separated by spaces to sort:"
+    numsInput <- getLine
+    let nums = map read (words numsInput) :: [Int]
+    putStrLn $ "Sorted list: " ++ show (sortList nums)
+
+    -- HC12T7: Circle Area
+    putStrLn $ "Area of circle with radius 5 is: " ++ show (calculateCircleArea 5)
+
+    -- HC12T8: Merge Lists
+    let list1 = [1,3,5,7]
+    let list2 = [2,4,6,8]
+    putStrLn $ "Merging [1,3,5,7] and [2,4,6,8]: " ++ show (mergeLists list1 list2)
+
+    -- HC12T9: Read File Content
+    putStrLn "Enter filename to read:"
+    filename <- getLine
+    readFileSafe filename
+
+    -- HC12T10: MathOps usage
+    putStrLn $ "MathOps add 10 20: " ++ show (MathOps.add 10 20)
+    putStrLn $ "MathOps multiply 4 6: " ++ show (MathOps.multiply 4 6)
