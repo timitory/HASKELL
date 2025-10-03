@@ -1,0 +1,101 @@
+----------------------------------------
+-- HC14T1: Initialize a Cabal Project
+----------------------------------------
+module Main where
+
+main :: IO ()
+main = putStrLn "Hello, Cabal!"
+
+
+----------------------------------------
+-- HC14T2: Add Dependency and Print Random Number
+----------------------------------------
+import System.Random (randomRIO)
+
+main2 :: IO ()
+main2 = do
+  num <- randomRIO (1, 100) :: IO Int
+  putStrLn $ "Random number: " ++ show num
+
+
+----------------------------------------
+-- HC14T3: NumericUnderscores Extension
+----------------------------------------
+{-# LANGUAGE NumericUnderscores #-}
+
+largeNumbers :: IO ()
+largeNumbers = do
+  let x = 1_000_000
+      y = 5_000_000_000
+  print (x, y)
+
+
+----------------------------------------
+-- HC14T4: TypeApplications Extension
+----------------------------------------
+{-# LANGUAGE TypeApplications #-}
+
+convertToInt :: String -> Int
+convertToInt str = read @Int str
+
+main4 :: IO ()
+main4 = print (convertToInt "12345")
+
+
+----------------------------------------
+-- HC14T5: Custom Data Type and Pattern Matching with @
+----------------------------------------
+data Result a = Success a | Failure String deriving Show
+
+handleResult :: Result Int -> String
+handleResult res@(Success val) = "Got value " ++ show val ++ " from " ++ show res
+handleResult res@(Failure msg) = "Error: " ++ msg ++ " (" ++ show res ++ ")"
+
+
+----------------------------------------
+-- HC14T6: Project Structure: src and app
+----------------------------------------
+-- app/Main.hs
+module Main where
+import Utils (greet)
+
+main :: IO ()
+main = greet
+
+-- src/Utils.hs
+module Utils where
+greet :: IO ()
+greet = putStrLn "Hello from src/Utils!"
+
+
+----------------------------------------
+-- HC14T8: Character Frequency Function
+----------------------------------------
+import Data.List (group, sort)
+
+counts :: String -> [(Char, Int)]
+counts str = map (\xs -> (head xs, length xs)) . group . sort $ str
+
+
+----------------------------------------
+-- HC14T9: PartialTypeSignatures Extension
+----------------------------------------
+{-# LANGUAGE PartialTypeSignatures #-}
+
+partialFunc :: _ -> Int
+partialFunc x = length x
+
+
+----------------------------------------
+-- HC14T10: Cabal Test Suite
+----------------------------------------
+import Test.HUnit
+import Utils (counts)
+
+mainTest :: IO ()
+mainTest = do
+  let test1 = TestCase (assertEqual "for (counts \"hello\")"
+                                    [('e',1),('h',1),('l',2),('o',1)]
+                                    (counts "hello"))
+  _ <- runTestTT (TestList [test1])
+  return ()
