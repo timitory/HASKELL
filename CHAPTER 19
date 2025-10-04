@@ -1,0 +1,134 @@
+import Control.Applicative
+import Control.Monad (forever, when, replicateM)
+
+----------------------------------------
+-- HC19T1: Applicative Instance for Pair
+----------------------------------------
+data Pair a = Pair a a deriving Show
+
+instance Functor Pair where
+  fmap f (Pair x y) = Pair (f x) (f y)
+
+instance Applicative Pair where
+  pure x = Pair x x
+  (Pair f g) <*> (Pair x y) = Pair (f x) (g y)
+
+----------------------------------------
+-- HC19T2: addThreeApplicative Function
+----------------------------------------
+addThreeApplicative :: Maybe Int -> Maybe Int -> Maybe Int -> Maybe Int
+addThreeApplicative a b c = (+) <$> a <*> ((+) <$> b <*> c)
+
+----------------------------------------
+-- HC19T3: safeProduct for Maybe Int
+----------------------------------------
+safeProduct :: [Maybe Int] -> Maybe Int
+safeProduct = fmap product . sequenceA
+
+----------------------------------------
+-- HC19T4: liftAndMultiply with liftA2
+----------------------------------------
+liftAndMultiply :: Maybe Int -> Maybe Int -> Maybe Int
+liftAndMultiply = liftA2 (*)
+
+----------------------------------------
+-- HC19T5: applyEffects with <*>
+----------------------------------------
+applyEffects :: (IO Int, IO Int) -> IO Int
+applyEffects (a, b) = (+) <$> a <*> b
+
+----------------------------------------
+-- HC19T6: repeatEffect with forever
+----------------------------------------
+repeatEffect :: IO () -> IO ()
+repeatEffect = forever
+
+----------------------------------------
+-- HC19T7: conditionalPrint with when
+----------------------------------------
+conditionalPrint :: Bool -> String -> IO ()
+conditionalPrint cond msg = when cond (putStrLn msg)
+
+----------------------------------------
+-- HC19T8: discardSecond with <*
+----------------------------------------
+discardSecond :: Applicative f => f a -> f b -> f a
+discardSecond = (<*)
+
+----------------------------------------
+-- HC19T9: pureAndApply Demonstration
+----------------------------------------
+pureAndApply :: Int
+pureAndApply = (pure (+3) <*> pure 7) :: Int
+
+----------------------------------------
+-- HC19T10: combineResults for Either
+----------------------------------------
+combineResults :: Either String Int -> Either String Int -> Either String Int
+combineResults = liftA2 (+)
+
+----------------------------------------
+-- HC19T11: Applicative Instance for Wrapper
+----------------------------------------
+data Wrapper a = Wrapper a deriving Show
+
+instance Functor Wrapper where
+  fmap f (Wrapper x) = Wrapper (f x)
+
+instance Applicative Wrapper where
+  pure = Wrapper
+  (Wrapper f) <*> (Wrapper x) = Wrapper (f x)
+
+----------------------------------------
+-- HC19T12: sumThreeApplicative for Either String Int
+----------------------------------------
+sumThreeApplicative :: Either String Int -> Either String Int -> Either String Int -> Either String Int
+sumThreeApplicative a b c = (\x y z -> x + y + z) <$> a <*> b <*> c
+
+----------------------------------------
+-- HC19T13: whenApplicative Function
+----------------------------------------
+whenApplicative :: Applicative f => Bool -> f () -> f ()
+whenApplicative cond action = if cond then action else pure ()
+
+----------------------------------------
+-- HC19T14: replicateEffect with replicateM
+----------------------------------------
+replicateEffect :: Int -> IO a -> IO [a]
+replicateEffect = replicateM
+
+----------------------------------------
+-- HC19T15: sequenceEffects for Applicative List
+----------------------------------------
+sequenceEffects :: Applicative f => [f a] -> f [a]
+sequenceEffects = sequenceA
+
+----------------------------------------
+-- HC19T16: applyWithEffects and <*>
+----------------------------------------
+applyWithEffects :: IO (Int -> Int) -> IO Int -> IO Int
+applyWithEffects f x = f <*> x
+
+----------------------------------------
+-- HC19T17: simulateMaybeEffect for Multiple Maybe
+----------------------------------------
+simulateMaybeEffect :: Maybe Int -> Maybe Int -> Maybe Int -> Maybe Int
+simulateMaybeEffect = liftA3 (\x y z -> x + y + z)
+
+----------------------------------------
+-- HC19T18: combineEitherResults with Multiple Either
+----------------------------------------
+combineEitherResults :: Either String Int -> Either String Int -> Either String Int -> Either String Int
+combineEitherResults = liftA3 (\x y z -> x * y * z)
+
+----------------------------------------
+-- HC19T19: sequenceApplicative for Maybe List
+----------------------------------------
+sequenceApplicative :: [Maybe a] -> Maybe [a]
+sequenceApplicative = sequenceA
+
+----------------------------------------
+-- HC19T20: replicateForever with forever
+----------------------------------------
+replicateForever :: IO a -> IO b
+replicateForever = forever
