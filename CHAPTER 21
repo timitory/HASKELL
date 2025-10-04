@@ -1,0 +1,381 @@
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TupleSections #-}
+
+module Main where
+
+import Data.Monoid (Sum(..))
+import Data.List (isInfixOf)
+import qualified Data.Map as Map
+import Data.Map (Map)
+import Control.Monad (replicateM)
+
+-- Writer
+newtype Writer w a = Writer { runWriter :: (a, w) } deriving (Show, Functor)
+
+tell :: Monoid w => w -> Writer w ()
+tell w = Writer ((), w)
+
+instance Monoid w => Applicative (Writer w) where
+  pure x = Writer (x, mempty)
+  Writer (f, wf) <*> Writer (x, wx) = Writer (f x, wf <> wx)
+
+instance Monoid w => Monad (Writer w) where
+  return = pure
+  Writer (x, wx) >>= f =
+    let Writer (y, wy) = f x
+    in Writer (y, wx <> wy)
+
+listen :: Monoid w => Writer w a -> Writer w (a, w)
+listen (Writer (a, w)) = Writer ((a, w), w)
+
+pass :: Monoid w => Writer w (a, w -> w) -> Writer w a
+pass (Writer ((a, f), w)) = Writer (a, f w)
+
+-- HC21T1: logging calculator
+addW, subW, mulW :: Int -> Int -> Writer [String] Int
+addW x y = Writer (x + y, ["add " ++ show x ++ " " ++ show y])
+subW x y = Writer (x - y, ["sub " ++ show x ++ " " ++ show y])
+mulW x y = Writer (x * y, ["mul " ++ show x ++ " " ++ show y])
+
+calcDemo :: Writer [String] Int
+calcDemo = do
+  a <- addW 2 3
+  b <- mulW a 4
+  c <- subW b 5
+  return c
+
+-- redact example using pass
+redactLine :: String -> String
+redactLine s = if "secret" `isInfixOf` s then "[REDACTED]" else s
+
+secretExample :: Writer [String] Int
+secretExample = pass $ do
+  x <- Writer (42, ["begin", "this is secret", "end"])
+  let f ws = map redactLine ws
+  return (x, f)
+
+-- HC21T4: counting steps with Sum Int
+countStepsDemo :: Writer (Sum Int) ()
+countStepsDemo = do
+  tell (Sum 1)
+  tell (Sum 2)
+  tell (Sum 1)
+
+-- Reader
+newtype Reader r a = Reader { runReader :: r -> a } deriving Functor
+
+ask :: Reader r r
+ask = Reader id
+
+local :: (r -> r) -> Reader r a -> Reader r a
+local f (Reader ra) = Reader (ra . f)
+
+instance Applicative (Reader r) where
+  pure x = Reader (const x)
+  Reader rf <*> Reader ra = Reader $ \r -> rf r (ra r)
+
+instance Monad (Reader r) where
+  return = pure
+  Reader ra >>= f = Reader $ \r ->
+    let a = ra r
+        Reader rb = f a
+    in rb r
+
+data Config = Config { greetPrefix :: String, shout :: Bool } deriving Show
+
+greet :: String -> Reader Config String
+greet name = do
+  cfg <- ask
+  let base = greetPrefix cfg ++ ", " ++ name
+  return $ if shout cfg then map toUpper base else base
+  where
+    toUpper c = if 'a' <= c && c <= 'z' then toEnum (fromEnum c - 32) else c
+
+greetWithFlip :: String -> Reader Config (String, String)
+greetWithFlip name = do
+  normal <- greet name
+  flipped <- local (\c -> c { shout = not (shout c) }) (greet name)
+  return (normal, flipped)
+
+-- HC21T7: Env refactor
+type Env = Map String String
+
+lookupPortOld :: Env -> Maybe String
+lookupPortOld env = Map.lookup "DB_PORT" env
+
+lookupPort :: Reader Env (Maybe String)
+lookupPort = Reader $ \env -> Map.lookup "DB_PORT" env
+
+lookupPortWithOverride :: Reader Env (Maybe String)
+lookupPortWithOverride = local (Map.insert "DB_PORT" "9999") lookupPort
+
+-- State
+newtype State s a = MkState { runState :: s -> (a, s) } deriving Functor
+
+instance Applicative (State s) where
+  pure x = MkState $ \s -> (x, s)
+  MkState sf <*> MkState sx = MkState $ \s ->
+    let (f, s1) = sf s
+        (x, s2) = sx s1
+    in (f x, s2)
+
+instance Monad (State s) where
+  return = pure
+  MkState m >>= f = MkState $ \s ->
+    let (a, s1) = m s
+        MkState m' = f a
+    in m' s1
+
+get :: State s s
+get = MkState $ \s -> (s, s)
+
+put :: s -> State s ()
+put s = MkState $ \_ -> ((), s)
+
+modify :: (s -> s) -> State s ()
+modify f = MkState $ \s -> ((), f s)
+
+-- HC21T9: mapCount
+mapCount :: (a -> b) -> [a] -> State Int [b]
+mapCount f xs = do
+  ys <- mapM (\x -> do { modify (+1); return (f x) }) xs
+  return ys
+
+-- HC21T10: Vending machine
+data VendingState = MkVendingState { items :: Int, credit :: Int } deriving Show
+
+insertCoin :: Int -> State VendingState ()
+insertCoin c = modify $ \vs -> vs { credit = credit vs + c }
+
+vend :: State VendingState String
+vend = MkState $ \s ->
+  if items s <= 0 then ("Sold out", s)
+  else if credit s <= 0 then ("Insufficient credit", s)
+  else let s' = s { items = items s - 1, credit = 0 } in ("Vended item", s')
+
+getChange :: State VendingState Int
+getChange = MkState $ \s -> (credit s, s { credit = 0 })
+
+vendingSequence :: State VendingState (String, Int)
+vendingSequence = do
+  insertCoin 5
+  insertCoin 5
+  r <- vend
+  ch <- getChange
+  return (r, ch)
+
+-- HC21T11: Undo stack
+type UndoState = (Int, [Int])
+
+setValue :: Int -> State UndoState ()
+setValue new = MkState $ \(curr, hist) -> ((), (new, curr:hist))
+
+undo :: State UndoState ()
+undo = MkState $ \(curr, hist) ->
+  case hist of
+    (h:hs) -> ((), (h, hs))
+    []     -> ((), (curr, []))
+
+-- HC21T12: deterministic random walk
+lcg :: Int -> Int
+lcg s = (s * 1664525 + 1013904223) `mod` 2147483647
+
+randomStep :: State (Int,(Int,Int)) ()
+randomStep = MkState $ \(seed, (x,y)) ->
+  let seed' = lcg seed
+      r = seed' `mod` 4
+      pos' = case r of
+               0 -> (x+1, y)
+               1 -> (x-1, y)
+               2 -> (x, y+1)
+               _ -> (x, y-1)
+  in ((), (seed', pos'))
+
+randomWalk :: Int -> State (Int,(Int,Int)) [(Int,Int)]
+randomWalk n = do
+  (seed0, pos0) <- get
+  let step 0 acc = return (reverse acc)
+      step k acc = do
+        randomStep
+        (_, p) <- get
+        step (k-1) (p:acc)
+  step n [pos0]
+
+-- HC21T13: Reader + Writer
+type LogWriter = Writer [String]
+
+step :: String -> Reader Config (LogWriter ())
+step msg = Reader $ \cfg -> tell [greetPrefix cfg ++ ": " ++ msg]
+
+composeSteps :: Reader Config (LogWriter ())
+composeSteps = do
+  step "starting"
+  step "processing"
+  step "finished"
+
+runSteps :: Config -> ((), [String])
+runSteps cfg = runWriter $ runReader composeSteps cfg
+
+-- HC21T14: State + Writer instrumented state
+type SW s a = State s (Writer [String] a)
+
+incS :: Int -> State Int (Writer [String] ())
+incS k = do
+  cur <- get
+  put (cur + k)
+  return $ tell ["inc " ++ show k ++ " -> " ++ show (cur + k)]
+
+decS :: Int -> State Int (Writer [String] ())
+decS k = do
+  cur <- get
+  put (cur - k)
+  return $ tell ["dec " ++ show k ++ " -> " ++ show (cur - k)]
+
+-- HC21T15: Reader + State tick
+data TickConfig = TickConfig { threshold :: Int } deriving Show
+
+tick :: Reader TickConfig (State Int Bool)
+tick = Reader $ \cfg -> MkState $ \s ->
+  let s' = s + 1
+      reached = s' >= threshold cfg
+  in (reached, s')
+
+runTicks :: TickConfig -> Int -> ([Bool], Int)
+runTicks cfg n =
+  let st = runReader tick cfg
+      go 0 s acc = (reverse acc, s)
+      go k s acc =
+        let (b, s') = runState st s
+        in go (k-1) s' (b:acc)
+  in go n 0 []
+
+-- HC21T16: laws checks
+writerAssocCheck :: Bool
+writerAssocCheck =
+  let m = Writer (3, ["m"])
+      k x = Writer (x+1, ["k"])
+      h y = Writer (y*2, ["h"])
+      left = (m >>= k) >>= h
+      right = m >>= (\x -> k x >>= h)
+  in runWriter left == runWriter right
+
+readerIdentitiesCheck :: Bool
+readerIdentitiesCheck =
+  let m = Reader $ \r -> r + (1 :: Int)
+      r0 = 10
+      left = runReader (local id m) r0
+      right = runReader m r0
+      f = (+1)
+      k x = Reader $ \r -> x + r
+        where r = (0 :: Int)
+      -- second invariant tested with a different k
+      k2 x = Reader $ \r -> x + r
+        where r = (0 :: Int)
+      lhs = runReader (local f (ask >>= (\x -> k2 x))) r0
+      rhs = runReader (ask >>= (\r -> local f (k2 (f r)))) r0
+  in (left == right) && (lhs == rhs)
+
+-- HC21T17: legacy vs refactor
+legacy :: Env -> Int -> (String, Env, Int, [String])
+legacy env counter =
+  let port = Map.lookup "DB_PORT" env
+      env' = Map.insert "LAST" "yes" env
+      counter' = counter + maybe 0 length port
+      logs = ["looked up port", "updated LAST"]
+  in ("result", env', counter', logs)
+
+type RWS a = Reader Env (State Int (Writer [String] a))
+
+refactored :: RWS String
+refactored = Reader $ \env -> MkState $ \counter ->
+  let port = Map.lookup "DB_PORT" env
+      env' = Map.insert "LAST" "yes" env
+      counter' = counter + maybe 0 length port
+      logs = ["looked up port", "updated LAST"]
+  in (Writer ("result", logs), counter')
+
+runRefactored :: Env -> Int -> (String, Env, Int, [String])
+runRefactored e c =
+  let st = runReader refactored e
+      (writerVal, c') = runState st c
+      (res, logs) = runWriter writerVal
+      env' = Map.insert "LAST" "yes" e
+  in (res, env', c', logs)
+
+-- Utilities
+printSection :: String -> IO ()
+printSection title = do
+  putStrLn ""
+  putStrLn $ replicate 60 '-'
+  putStrLn ("== " ++ title)
+  putStrLn $ replicate 60 '-'
+
+-- MAIN demo
+main :: IO ()
+main = do
+  printSection "HC21T1: calcDemo"
+  print $ runWriter calcDemo
+
+  printSection "HC21T2: Writer associativity check"
+  print writerAssocCheck
+
+  printSection "HC21T3: listen / pass redact example"
+  print $ runWriter secretExample
+
+  printSection "HC21T4: Switch log monoid to Sum Int"
+  print $ runWriter countStepsDemo
+
+  printSection "HC21T5: Reader greeting"
+  let cfg = Config "Hello" False
+  print $ runReader (greet "Paul") cfg
+  print $ runReader (greetWithFlip "Paul") cfg
+
+  printSection "HC21T7: Env refactor"
+  let env = Map.fromList [("DB_PORT","5432")]
+  print $ lookupPortOld env
+  print $ runReader lookupPort env
+  print $ runReader lookupPortWithOverride env
+
+  printSection "HC21T8/9: mapCount demo"
+  let (mapped, finalCount) = runState (mapCount (+1) [1,2,3,4]) 0
+  print (mapped, finalCount)
+
+  printSection "HC21T10: vendingSequence"
+  let initialV = MkVendingState 2 0
+      (res, finalV) = runState vendingSequence initialV
+  print (res, finalV)
+
+  printSection "HC21T11: undo stack demo"
+  let actions = do { setValue 10; setValue 20; undo; get }
+      (valAfter, finalState) = runState actions (0, [])
+  print (valAfter, finalState)
+
+  printSection "HC21T12: deterministic random walk"
+  let start = (42, (0,0))
+      (path, endState) = runState (randomWalk 5) start
+  print (path, endState)
+
+  printSection "HC21T13: Reader + Writer steps"
+  let cfgLog = Config "Worker" False
+      ((), logs) = runWriter (runReader composeSteps cfgLog)
+  print logs
+
+  printSection "HC21T14: State+Writer instrumented demo"
+  let (w1, s1) = runState (incS 3) 0
+      ((), log1) = runWriter w1
+  print (s1, log1)
+
+  printSection "HC21T15: tick demo"
+  print $ runTicks (TickConfig 3) 5
+  print $ runTicks (TickConfig 1) 3
+
+  printSection "HC21T16: laws checks for Reader/Writer"
+  print ("writer assoc", writerAssocCheck, "reader identities", readerIdentitiesCheck)
+
+  printSection "HC21T17: refactor legacy -> R/W/S"
+  let env0 = Map.fromList [("DB_PORT","1234")]
+      (resStr, env', c', logs') = runRefactored env0 0
+  print (resStr, env', c', logs')
+
+  putStrLn "\nDone."
