@@ -1,0 +1,165 @@
+{-# LANGUAGE InstanceSigs #-}
+
+import Control.Monad
+import Control.Monad.State
+import Control.Monad.Reader
+import Control.Monad.Writer
+import Control.Monad.Trans.State
+import Control.Monad.Trans.Maybe
+import Control.Monad.Identity
+import System.Random
+import Data.Maybe
+import Data.Map (Map)
+import qualified Data.Map as Map
+
+-- HC20T1: safeDivide with Maybe Monad
+safeDivide :: Int -> Int -> Maybe Int
+safeDivide _ 0 = Nothing
+safeDivide x y = Just (x `div` y)
+
+-- HC20T2: sequenceMaybe for List of Maybe
+sequenceMaybe :: [Maybe a] -> Maybe [a]
+sequenceMaybe = foldr (liftM2 (:)) (Just [])
+
+-- HC20T3: Writer Monad Logging Calculator
+type CalcLog = Writer [String] Int
+loggingCalc :: Int -> Int -> CalcLog
+loggingCalc x y = do
+    tell ["Adding " ++ show x ++ " and " ++ show y]
+    return (x + y)
+
+-- HC20T4: countChars with State Monad
+countChars :: Char -> String -> Int
+countChars c s = evalState (mapM_ update s >> get) 0
+  where
+    update ch = when (ch == c) (modify (+1))
+
+-- HC20T5: Reader Monad for Configurable Greeting
+type Config = String
+greet :: Reader Config String
+greet = do
+    name <- ask
+    return ("Hello, " ++ name ++ "!")
+
+-- HC20T6: doubleMonad Combining Maybe and List
+doubleMonad :: Maybe [a] -> [Maybe a]
+doubleMonad m = maybe [] (map Just) m
+
+-- HC20T7: findFirst with Either Monad
+findFirst :: (a -> Bool) -> [a] -> Either String a
+findFirst _ [] = Left "Element not found"
+findFirst p (x:xs) = if p x then Right x else findFirst p xs
+
+-- HC20T8: Parser Monad for Simple Expressions
+newtype Parser a = Parser { runParser :: String -> [(a, String)] }
+instance Functor Parser where
+    fmap f (Parser p) = Parser (\s -> [(f a, rest) | (a, rest) <- p s])
+instance Applicative Parser where
+    pure a = Parser (\s -> [(a, s)])
+    (Parser pf) <*> (Parser pa) =
+        Parser (\s -> [(f a, rest2) | (f, rest1) <- pf s, (a, rest2) <- pa rest1])
+instance Monad Parser where
+    (Parser pa) >>= f = Parser (\s -> concat [runParser (f a) rest | (a, rest) <- pa s])
+
+charP :: Char -> Parser Char
+charP c = Parser f
+  where
+    f (x:xs) | x == c = [(c, xs)]
+    f _ = []
+
+-- HC20T9: replicateMonad with Identity Monad
+replicateMonad :: Int -> a -> Identity [a]
+replicateMonad n x = Identity (replicate n x)
+
+-- HC20T10: Nested StateT and MaybeT Transformer
+type Nested = StateT Int (MaybeT IO)
+nestedExample :: Nested String
+nestedExample = do
+    n <- get
+    if n > 0 then lift (MaybeT (return (Just "Valid"))) else lift (MaybeT (return Nothing)))
+
+-- HC20T11: randomWalk with State Monad
+type Point = (Int, Int)
+randomWalk :: Int -> State StdGen [Point]
+randomWalk 0 = return [(0,0)]
+randomWalk n = do
+    gen <- get
+    let (dx, gen1) = randomR (-1,1) gen
+    let (dy, gen2) = randomR (-1,1) gen1
+    put gen2
+    rest <- randomWalk (n-1)
+    let (x,y) = head rest
+    return ((x+dx, y+dy):rest)
+
+-- HC20T12: File Reading with IO Monad
+readFileLines :: FilePath -> IO ()
+readFileLines path = readFile path >>= mapM_ putStrLn . lines
+
+-- HC20T13: fibonacciMemo with State Monad
+fibonacciMemo :: Int -> State (Map Int Int) Int
+fibonacciMemo 0 = return 0
+fibonacciMemo 1 = return 1
+fibonacciMemo n = do
+    memo <- get
+    case Map.lookup n memo of
+      Just val -> return val
+      Nothing -> do
+          a <- fibonacciMemo (n-1)
+          b <- fibonacciMemo (n-2)
+          let val = a + b
+          modify (Map.insert n val)
+          return val
+
+-- HC20T14: mapMFilter Monadic Map-Filter
+mapMFilter :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
+mapMFilter f xs = catMaybes <$> mapM f xs
+
+-- HC20T15: treeSum with Custom Monad
+data Tree a = Leaf a | Node (Tree a) (Tree a) deriving Show
+newtype TreeM a = TreeM { runTreeM :: a }
+instance Monad TreeM where
+    return = TreeM
+    (TreeM x) >>= f = f x
+instance Functor TreeM where
+    fmap f (TreeM x) = TreeM (f x)
+instance Applicative TreeM where
+    pure = return
+    (TreeM f) <*> (TreeM x) = TreeM (f x)
+treeSum :: Num a => Tree a -> TreeM a
+treeSum (Leaf x) = return x
+treeSum (Node l r) = do
+    lv <- treeSum l
+    rv <- treeSum r
+    return (lv + rv)
+
+-- HC20T16: retryIO with IO Monad
+retryIO :: Int -> IO a -> IO (Maybe a)
+retryIO 0 _ = return Nothing
+retryIO n action = do
+    result <- action
+    return (Just result) `catch` \(_::IOException) -> retryIO (n-1) action
+
+-- HC20T17: validatePassword with Either Monad
+validatePassword :: String -> Either String String
+validatePassword pwd
+    | length pwd < 6 = Left "Password too short"
+    | not (any (`elem` ['A'..'Z']) pwd) = Left "Missing uppercase letter"
+    | not (any (`elem` ['0'..'9']) pwd) = Left "Missing digit"
+    | otherwise = Right "Password valid"
+
+-- HC20T18: MaybeT Monad Transformer for User Input
+getUserInput :: MaybeT IO String
+getUserInput = do
+    input <- lift getLine
+    guard (not (null input))
+    return input
+
+-- HC20T19: Writer Monad-based Logging System
+logFunction :: (Show a) => String -> a -> Writer [String] a
+logFunction name x = do
+    tell ["Called " ++ name ++ " with " ++ show x]
+    return x
+
+-- HC20T20: batchProcessing with Monadic Bind
+batchProcessing :: Monad m => [m a] -> m [a]
+batchProcessing = foldr (>>= \x -> fmap (x:) ) (return [])
