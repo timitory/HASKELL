@@ -1,0 +1,65 @@
+import Data.Char (toLower)
+
+----------------------------------------
+-- HC18T1: mapToLower Function with fmap
+----------------------------------------
+mapToLower :: String -> String
+mapToLower = fmap toLower
+
+----------------------------------------
+-- HC18T2: Functor Instance for Tree
+----------------------------------------
+data Tree a = Empty | Node a (Tree a) (Tree a) deriving (Show)
+
+instance Functor Tree where
+  fmap _ Empty = Empty
+  fmap f (Node x l r) = Node (f x) (fmap f l) (fmap f r)
+
+----------------------------------------
+-- HC18T3: incrementTreeValues Function
+----------------------------------------
+incrementTreeValues :: Num a => Tree a -> Tree a
+incrementTreeValues = fmap (+1)
+
+----------------------------------------
+-- HC18T4: mapToBits Function
+----------------------------------------
+mapToBits :: [Bool] -> [Char]
+mapToBits = fmap (\b -> if b then '1' else '0')
+
+----------------------------------------
+-- HC18T5: Functor Instance for Either
+----------------------------------------
+instance Functor (Either e) where
+  fmap _ (Left e) = Left e
+  fmap f (Right x) = Right (f x)
+
+----------------------------------------
+-- HC18T6: applyToMaybe Function
+----------------------------------------
+applyToMaybe :: (a -> b) -> Maybe a -> Maybe b
+applyToMaybe = fmap
+
+----------------------------------------
+-- HC18T7: fmapTuple Function
+----------------------------------------
+fmapTuple :: (b -> c) -> (a, b) -> (a, c)
+fmapTuple = fmap
+
+----------------------------------------
+-- HC18T8: identityLawCheck Function
+----------------------------------------
+identityLawCheck :: (Functor f, Eq (f a)) => f a -> Bool
+identityLawCheck x = fmap id x == x
+
+----------------------------------------
+-- HC18T9: compositionLawCheck Function
+----------------------------------------
+compositionLawCheck :: (Eq (f c), Functor f) => (b -> c) -> (a -> b) -> f a -> Bool
+compositionLawCheck f g x = fmap (f . g) x == (fmap f . fmap g) x
+
+----------------------------------------
+-- HC18T10: nestedFmap Function
+----------------------------------------
+nestedFmap :: (a -> b) -> [[Maybe a]] -> [[Maybe b]]
+nestedFmap = fmap . fmap . fmap
